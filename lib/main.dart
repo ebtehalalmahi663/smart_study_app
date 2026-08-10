@@ -11,7 +11,7 @@ class SmartStudyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Smart Study Assistant',
+      title: 'المساعد الدراسي الذكي',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -27,9 +27,6 @@ class SmartStudyApp extends StatelessWidget {
   }
 }
 
-// =============================================================
-// الشاشة الأولى: اختيار الفصل الدراسي
-// =============================================================
 class SemesterSelectionScreen extends StatefulWidget {
   const SemesterSelectionScreen({super.key});
 
@@ -150,35 +147,30 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
     );
   }
 }
-// =============================================================
-// الشاشة الثانية: عرض المقررات الخاصة بالسمستر
-// =============================================================
 class CoursesListScreen extends StatelessWidget {
   final int semesterNumber;
 
   const CoursesListScreen({super.key, required this.semesterNumber});
 
   List<Map<String, dynamic>> _getCoursesForSemester(int sem) {
-    switch (sem) {
-      case 6:
-        return [
-          {'name': 'الذكاء الاصطناعي (AI)', 'icon': Icons.psychology},
-          {'name': 'رسم الحاسوب (Computer Graphics)', 'icon': Icons.palette},
-          {'name': 'قواعد البيانات (Database Systems)', 'icon': Icons.storage},
-          {'name': 'هندسة البرمجيات (Software Engineering)', 'icon': Icons.developer_mode},
-          {'name': 'تقنيات الإنترنت (Internet Techniques)', 'icon': Icons.web},
-          {'name': 'مبادئ التسويق (Marketing)', 'icon': Icons.campaign},
-          {'name': 'مبادئ المحاسبة (Accounting)', 'icon': Icons.calculate},
-          {'name': 'النمذجة والمحاكاة (Modeling & Simulation)', 'icon': Icons.analytics},
-        ];
-      default:
-        return [
-          {'name': 'مقدمة في البرمجة', 'icon': Icons.code},
-          {'name': 'تراكيب البيانات', 'icon': Icons.account_tree},
-          {'name': 'الرياضيات المتقطعة', 'icon': Icons.functions},
-          {'name': 'شبكات الحاسوب', 'icon': Icons.network_check},
-        ];
+    if (sem == 6) {
+      return [
+        {'name': 'الذكاء الاصطناعي (AI)', 'icon': Icons.psychology},
+        {'name': 'رسم الحاسوب (Computer Graphics)', 'icon': Icons.palette},
+        {'name': 'قواعد البيانات (Database Systems)', 'icon': Icons.storage},
+        {'name': 'هندسة البرمجيات (Software Engineering)', 'icon': Icons.developer_mode},
+        {'name': 'تقنيات الإنترنت (Internet Techniques)', 'icon': Icons.web},
+        {'name': 'مبادئ التسويق (Marketing)', 'icon': Icons.campaign},
+        {'name': 'مبادئ المحاسبة (Accounting)', 'icon': Icons.calculate},
+        {'name': 'النمذجة والمحاكاة (Modeling & Simulation)', 'icon': Icons.analytics},
+      ];
     }
+    return [
+      {'name': 'مقدمة في البرمجة', 'icon': Icons.code},
+      {'name': 'تراكيب البيانات', 'icon': Icons.account_tree},
+      {'name': 'الرياضيات المتقطعة', 'icon': Icons.functions},
+      {'name': 'شبكات الحاسوب', 'icon': Icons.network_check},
+    ];
   }
 
   @override
@@ -232,9 +224,7 @@ class CoursesListScreen extends StatelessWidget {
     );
   }
 }
-// =============================================================
-// الشاشة الثالثة: الشاشة المفصلة بثلاثة أقسام (Tabbed Screen)
-// =============================================================
+
 class CourseDetailTabbedScreen extends StatefulWidget {
   final String courseName;
 
@@ -245,10 +235,7 @@ class CourseDetailTabbedScreen extends StatefulWidget {
 }
 
 class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
-  // قائمة الملفات المدرجة
   List<PlatformFile> uploadedFiles = [];
-
-  // متغيرات قسم المحادثة
   final TextEditingController _messageController = TextEditingController();
   final List<Map<String, dynamic>> _messages = [
     {
@@ -257,40 +244,24 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
     }
   ];
 
-  // متغيرات قسم تكوين الامتحان
   int selectedExamQuestionsCount = 5;
   String selectedQuestionType = 'اختيار من متعدد';
   List<String> selectedExamLectures = [];
 
-  // دالة فتح متصفح الملفات واختيار أي عدد من الملفات
   Future<void> _pickFiles() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx'],
       );
 
       if (result != null) {
         setState(() {
           uploadedFiles.addAll(result.files);
         });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تمت إضافة ${result.files.length} ملف/ملفات بنجاح!')),
-          );
-        }
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم اختيار الملفات بنجاح.')),
-        );
-      }
-    }
+    } catch (_) {}
   }
 
-  // دالة إرسال سؤال في المحادثة
   void _sendMessage() {
     if (_messageController.text.trim().isEmpty) return;
 
@@ -316,7 +287,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
       });
     });
   }
-
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -341,9 +311,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
         ),
         body: TabBarView(
           children: [
-            // ---------------------------------------------------------
-            // القسم الأول: المحاضرات
-            // ---------------------------------------------------------
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -422,10 +389,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                 ],
               ),
             ),
-
-            // ---------------------------------------------------------
-            // القسم الثاني: الشات والمناقشة
-            // ---------------------------------------------------------
             Column(
               children: [
                 Container(
@@ -515,10 +478,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                 ),
               ],
             ),
-
-            // ---------------------------------------------------------
-            // القسم الثالث: تكوين الامتحان
-            // ---------------------------------------------------------
             SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Card(
@@ -540,8 +499,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                         ],
                       ),
                       const Divider(height: 30),
-
-                      // اختيار المحاضرات
                       const Text('اختر المحاضرات للرصد:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       const SizedBox(height: 8),
                       uploadedFiles.isEmpty
@@ -574,10 +531,7 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                                 );
                               }).toList(),
                             ),
-
                       const SizedBox(height: 20),
-
-                      // عدد الأسئلة
                       const Text('حدد عدد الأسئلة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
@@ -593,10 +547,7 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                           if (val != null) setState(() => selectedExamQuestionsCount = val);
                         },
                       ),
-
                       const SizedBox(height: 20),
-
-                      // نوع الأسئلة
                       const Text('اختر نوع الأسئلة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
@@ -612,10 +563,7 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                           if (val != null) setState(() => selectedQuestionType = val);
                         },
                       ),
-
                       const SizedBox(height: 30),
-
-                      // زر تكوين الامتحان
                       SizedBox(
                         width: double.infinity,
                         height: 50,
