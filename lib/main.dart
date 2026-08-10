@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 
 void main() {
   runApp(const SmartStudyApp());
@@ -235,7 +234,7 @@ class CourseDetailTabbedScreen extends StatefulWidget {
 }
 
 class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
-  List<PlatformFile> uploadedFiles = [];
+  List<String> uploadedFiles = [];
   final TextEditingController _messageController = TextEditingController();
   final List<Map<String, dynamic>> _messages = [
     {
@@ -248,18 +247,11 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
   String selectedQuestionType = 'اختيار من متعدد';
   List<String> selectedExamLectures = [];
 
-  Future<void> _pickFiles() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-      );
-
-      if (result != null) {
-        setState(() {
-          uploadedFiles.addAll(result.files);
-        });
-      }
-    } catch (_) {}
+  void _addMockFile() {
+    setState(() {
+      int count = uploadedFiles.length + 1;
+      uploadedFiles.add('المحاضرة_$count.pdf');
+    });
   }
 
   void _sendMessage() {
@@ -281,7 +273,7 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
         } else {
           _messages.add({
             'isUser': false,
-            'text': 'استناداً إلى الملفات المدرجة (${uploadedFiles.first.name}): إجابة سؤالك تعتمد على المفاهيم الموضحة في الملاحظات الدراسية.'
+            'text': 'استناداً إلى الملفات المدرجة (${uploadedFiles.first}): إجابة سؤالك تعتمد على المفاهيم الموضحة في الملاحظات الدراسية.'
           });
         }
       });
@@ -324,10 +316,10 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: _pickFiles,
+                    onPressed: _addMockFile,
                     icon: const Icon(Icons.add_to_photos, color: Colors.white),
                     label: const Text(
-                      'إدراج ملفات المحاضرات',
+                      'إدراج ملف محاضرة جديد',
                       style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -355,7 +347,7 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                                 Icon(Icons.folder_open, size: 70, color: Colors.grey.shade400),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'لم يتم إدراج أي ملفات بعد\nاضغط على الزر أعلاه لاختيار الملفات',
+                                  'لم يتم إدراج أي ملفات بعد\nاضغط على الزر أعلاه لإضافة الملفات',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(color: Colors.grey, fontSize: 15),
                                 ),
@@ -365,14 +357,14 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                         : ListView.builder(
                             itemCount: uploadedFiles.length,
                             itemBuilder: (context, index) {
-                              final file = uploadedFiles[index];
+                              final fileName = uploadedFiles[index];
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 child: ListTile(
                                   leading: const Icon(Icons.picture_as_pdf, color: Colors.red, size: 32),
-                                  title: Text(file.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('${(file.size / 1024).toStringAsFixed(1)} KB'),
+                                  title: Text(fileName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: const Text('2.4 MB'),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                                     onPressed: () {
@@ -514,17 +506,17 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                               ),
                             )
                           : Column(
-                              children: uploadedFiles.map((file) {
+                              children: uploadedFiles.map((fileName) {
                                 return CheckboxListTile(
-                                  title: Text(file.name),
-                                  value: selectedExamLectures.contains(file.name),
+                                  title: Text(fileName),
+                                  value: selectedExamLectures.contains(fileName),
                                   activeColor: const Color(0xFF0288D1),
                                   onChanged: (bool? val) {
                                     setState(() {
                                       if (val == true) {
-                                        selectedExamLectures.add(file.name);
+                                        selectedExamLectures.add(fileName);
                                       } else {
-                                        selectedExamLectures.remove(file.name);
+                                        selectedExamLectures.remove(fileName);
                                       }
                                     });
                                   },
