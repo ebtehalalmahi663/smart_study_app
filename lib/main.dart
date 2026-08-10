@@ -599,3 +599,5 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
     );
   }
 }
+
+ 
