@@ -18,16 +18,15 @@ class SmartStudyApp extends StatelessWidget {
           primary: const Color(0xFF1E88E5),
         ),
         useMaterial3: true,
-        fontFamily: 'Roboto',
       ),
       home: const SemesterSelectionScreen(),
     );
   }
 }
 
-// -------------------------------------------------------------
+// =============================================================
 // الشاشة الأولى: اختيار الفصل الدراسي
-// -------------------------------------------------------------
+// =============================================================
 class SemesterSelectionScreen extends StatefulWidget {
   const SemesterSelectionScreen({super.key});
 
@@ -149,15 +148,14 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
   }
 }
 
-// -------------------------------------------------------------
-// الشاشة الثانية: عرض المقررات الخاصة بالسمستر المختار
-// -------------------------------------------------------------
+// =============================================================
+// الشاشة الثانية: عرض المقررات الخاصة بالسمستر
+// =============================================================
 class CoursesListScreen extends StatelessWidget {
   final int semesterNumber;
 
   const CoursesListScreen({super.key, required this.semesterNumber});
 
-  // قائمة المقرارات لكل سمستر
   List<Map<String, dynamic>> _getCoursesForSemester(int sem) {
     switch (sem) {
       case 6:
@@ -173,7 +171,7 @@ class CoursesListScreen extends StatelessWidget {
         ];
       default:
         return [
-          {'name': 'برمجة الحاسوب', 'icon': Icons.code},
+          {'name': 'مقدمة في البرمجة', 'icon': Icons.code},
           {'name': 'تراكيب البيانات', 'icon': Icons.account_tree},
           {'name': 'الرياضيات المتقطعة', 'icon': Icons.functions},
           {'name': 'شبكات الحاسوب', 'icon': Icons.network_check},
@@ -204,7 +202,7 @@ class CoursesListScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
-              elevation: 3,
+              elevation: 2,
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20.0,
@@ -224,13 +222,15 @@ class CoursesListScreen extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
-                subtitle: const Text('اضغط للتصفح والمساعد الذكي'),
+                subtitle: const Text('اضغط لبدء المراجعة الذكية'),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 18),
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('تم اختيار مقرر: ${course['name']}'),
-                      duration: const Duration(seconds: 2),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CourseDetailChatScreen(
+                        courseName: course['name'] as String,
+                      ),
                     ),
                   );
                 },
@@ -238,6 +238,210 @@ class CoursesListScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+// =============================================================
+// الشاشة الثالثة: تفاصيل المقرر والمساعد الذكي (AI Chat & PDF)
+// =============================================================
+class CourseDetailChatScreen extends StatefulWidget {
+  final String courseName;
+
+  const CourseDetailChatScreen({super.key, required this.courseName});
+
+  @override
+  State<CourseDetailChatScreen> createState() => _CourseDetailChatScreenState();
+}
+
+class _CourseDetailChatScreenState extends State<CourseDetailChatScreen> {
+  final TextEditingController _messageController = TextEditingController();
+  String? uploadedFileName;
+  
+  final List<Map<String, dynamic>> _messages = [
+    {
+      'isUser': false,
+      'text': 'أهلاً بك! يمكنك رفع ملف المحاضرة (PDF) وسأقوم بمساعدتك في تلخيصه أو الإجابة عن أسئلتك وتوليد اختبارات عليه.'
+    }
+  ];
+
+  void _sendMessage() {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final userQuery = _messageController.text;
+    setState(() {
+      _messages.add({'isUser': true, 'text': userQuery});
+      _messageController.clear();
+    });
+
+    // إجابة تجريبية للتفاعل
+    Future.delayed(const Duration(milliseconds: 800), () {
+      setState(() {
+        _messages.add({
+          'isUser': false,
+          'text': 'بناءً على ملفات مقرر (${widget.courseName})، الإجابة هي: يتم تطبيق هذه المفاهيم في التحليل البرمجي والتطبيق العملي بشكل مباشر.'
+        });
+      });
+    });
+  }
+
+  void _generateQuiz() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.quiz, color: Color(0xFF1E88E5)),
+            SizedBox(width: 8),
+            Text('اختبار تجريبي ذكي'),
+          ],
+        ),
+        content: Text(
+          'سؤال 1: ما هو المفهوم الأساسي لمقرر ${widget.courseName}؟\n\nأ) التصميم الذكي\nب) معالجة البيانات\nج) إدارة الأنظمة',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.courseName),
+        backgroundColor: const Color(0xFF1E88E5),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.assignment),
+            tooltip: 'توليد اختبار',
+            onPressed: _generateQuiz,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // شريط معلومات الملف المرفوع
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.blue.shade50,
+            child: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf, color: Colors.red),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    uploadedFileName ?? 'لم يتم رفع ملف PDF للمحاضرة بعد',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      uploadedFileName = 'المحاضرة_الأولى.pdf';
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم رفع ملف المحاضرة بنجاح!')),
+                    );
+                  },
+                  icon: const Icon(Icons.upload_file, size: 18),
+                  label: const Text('رفع PDF'),
+                ),
+              ],
+            ),
+          ),
+
+          // قائمة المحادثة
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                final isUser = msg['isUser'] as bool;
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isUser ? const Color(0xFF1E88E5) : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(16).copyWith(
+                        bottomRight: isUser ? Radius.zero : null,
+                        bottomLeft: !isUser ? Radius.zero : null,
+                      ),
+                    ),
+                    child: Text(
+                      msg['text'] as String,
+                      style: TextStyle(
+                        color: isUser ? Colors.white : Colors.black87,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // حقل أدخال النص
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: 'اسأل المساعد الذكي عن الدرس...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  backgroundColor: const Color(0xFF1E88E5),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                    onPressed: _sendMessage,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
