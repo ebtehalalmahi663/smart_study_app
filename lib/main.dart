@@ -18,12 +18,16 @@ class SmartStudyApp extends StatelessWidget {
           primary: const Color(0xFF1E88E5),
         ),
         useMaterial3: true,
+        fontFamily: 'Roboto',
       ),
       home: const SemesterSelectionScreen(),
     );
   }
 }
 
+// -------------------------------------------------------------
+// الشاشة الأولى: اختيار الفصل الدراسي
+// -------------------------------------------------------------
 class SemesterSelectionScreen extends StatefulWidget {
   const SemesterSelectionScreen({super.key});
 
@@ -114,19 +118,22 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
                           onPressed: selectedSemester == null
                               ? null
                               : () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'تم اختيار السمستر $selectedSemester بنجاح!'),
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CoursesListScreen(
+                                        semesterNumber: selectedSemester!,
+                                      ),
                                     ),
                                   );
                                 },
                           child: const Text(
-                            'دخول',
+                            'عرض المقررات',
                             style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -136,6 +143,100 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// الشاشة الثانية: عرض المقررات الخاصة بالسمستر المختار
+// -------------------------------------------------------------
+class CoursesListScreen extends StatelessWidget {
+  final int semesterNumber;
+
+  const CoursesListScreen({super.key, required this.semesterNumber});
+
+  // قائمة المقرارات لكل سمستر
+  List<Map<String, dynamic>> _getCoursesForSemester(int sem) {
+    switch (sem) {
+      case 6:
+        return [
+          {'name': 'الذكاء الاصطناعي (AI)', 'icon': Icons.psychology},
+          {'name': 'رسم الحاسوب (Computer Graphics)', 'icon': Icons.palette},
+          {'name': 'قواعد البيانات (Database Systems)', 'icon': Icons.storage},
+          {'name': 'هندسة البرمجيات (Software Engineering)', 'icon': Icons.developer_mode},
+          {'name': 'تقنيات الإنترنت (Internet Techniques)', 'icon': Icons.web},
+          {'name': 'مبادئ التسويق (Marketing)', 'icon': Icons.campaign},
+          {'name': 'مبادئ المحاسبة (Accounting)', 'icon': Icons.calculate},
+          {'name': 'النمذجة والمحاكاة (Modeling & Simulation)', 'icon': Icons.analytics},
+        ];
+      default:
+        return [
+          {'name': 'برمجة الحاسوب', 'icon': Icons.code},
+          {'name': 'تراكيب البيانات', 'icon': Icons.account_tree},
+          {'name': 'الرياضيات المتقطعة', 'icon': Icons.functions},
+          {'name': 'شبكات الحاسوب', 'icon': Icons.network_check},
+        ];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final courses = _getCoursesForSemester(semesterNumber);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('مقررات السمستر $semesterNumber'),
+        backgroundColor: const Color(0xFF1E88E5),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
+      body: Container(
+        color: const Color(0xFFF5F7FA),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: courses.length,
+          itemBuilder: (context, index) {
+            final course = courses[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              elevation: 3,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20.0,
+                  vertical: 8.0,
+                ),
+                leading: CircleAvatar(
+                  backgroundColor: const Color(0xFF1E88E5).withOpacity(0.1),
+                  child: Icon(
+                    course['icon'] as IconData,
+                    color: const Color(0xFF1E88E5),
+                  ),
+                ),
+                title: Text(
+                  course['name'] as String,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                subtitle: const Text('اضغط للتصفح والمساعد الذكي'),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('تم اختيار مقرر: ${course['name']}'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         ),
       ),
     );
