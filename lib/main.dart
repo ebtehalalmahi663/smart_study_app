@@ -1,13 +1,12 @@
-import 'dart:convert';
+import 'dart0:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:share_plus/share_plus.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
   runApp(const SmartStudyApp());
 }
 
@@ -20,242 +19,199 @@ class SmartStudyApp extends StatelessWidget {
       title: 'المساعد الدراسي الذكي',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0288D1),
-          primary: const Color(0xFF0288D1),
-          secondary: const Color(0xFF00B0FF),
-        ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF4F6F9),
+        primarySwatch: Colors.lightBlue,
+        scaffoldBackgroundColor: const Color(0xFFF5F9FC),
+        fontFamily: 'Roboto',
       ),
-      home: const MainSelectionScreen(),
+      home: const CollegesScreen(),
     );
   }
 }
 
-class MainSelectionScreen extends StatefulWidget {
-  const MainSelectionScreen({super.key});
+class CollegesScreen extends StatelessWidget {
+  const CollegesScreen({super.key});
 
-  @override
-  State<MainSelectionScreen> createState() => _MainSelectionScreenState();
-}
-
-class _MainSelectionScreenState extends State<MainSelectionScreen> {
-  String? selectedCollege;
-  String? selectedDepartment;
-  int? selectedSemester;
-
-  final Map<String, List<String>> collegesData = {
-    'كلية علوم الحاسوب وتقانة المعلومات': [
-      'علوم الحاسوب',
-      'تقانة المعلومات',
-      'نظم المعلومات',
-      'هندسة البرمجيات'
-    ],
-    'كلية الاقتصاد': ['محاسبة', 'اقتصاد', 'إدارة'],
-    'كلية الطب': [
-      'الطب البشري',
-      'الطب البيطري',
-      'المختبرات الطبية',
-      'الصيدلة',
-      'التمريض'
-    ],
-    'كلية التربية': [
-      'تربية علم نفس',
-      'تربية كيمياء وأحياء',
-      'تربية إنجليزي',
-      'تربية لغة عربية',
-      'تربية جغرافيا وتاريخ',
-      'تربية خاصة',
-      'تربية فيزياء ورياضيات'
-    ],
-    'كلية القانون': ['القانون العام', 'القانون الخاص'],
-  };
-
-  int _getMaxSemesters(String college) {
-    if (college == 'كلية علوم الحاسوب وتقانة المعلومات' || college == 'كلية الطب') {
-      return 10;
-    }
-    return 8;
-  }
+  final List<Map<String, dynamic>> colleges = const [
+    {
+      'name': 'كلية علوم الحاسوب وتكنولوجيا المعلومات',
+      'icon': Icons.computer,
+      'departments': ['علوم الحاسوب', 'تقنية المعلومات', 'نظم المعلومات'],
+    },
+    {
+      'name': 'كلية الهندسة',
+      'icon': Icons.engineering,
+      'departments': ['الهندسة المدنية', 'الهندسة الكهربائية', 'الميكانيكا'],
+    },
+    {
+      'name': 'كلية الاقتصاد',
+      'icon': Icons.business_center,
+      'departments': ['إدارة الأعمال', 'المحاسبة', 'الاقتصاد'],
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
-    List<String> availableDepartments =
-        selectedCollege != null ? collegesData[selectedCollege]! : [];
-    int maxSemesters =
-        selectedCollege != null ? _getMaxSemesters(selectedCollege!) : 8;
-
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [Color(0xFF0288D1), Color(0xFF01579B)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Card(
-                elevation: 10,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircleAvatar(
-                        radius: 38,
-                        backgroundColor: Color(0xFFE1F5FE),
-                        child: Icon(Icons.school_rounded,
-                            size: 45, color: Color(0xFF0288D1)),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'المساعد الدراسي الذكي',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF01579B),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'حدد بياناتك الأكاديمية للمتابعة',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 24),
-                      DropdownButtonFormField<String>(
-                        value: selectedCollege,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'اختر الكلية',
-                          prefixIcon: const Icon(Icons.account_balance,
-                              color: Color(0xFF0288D1)),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        items: collegesData.keys.map((college) {
-                          return DropdownMenuItem(
-                            value: college,
-                            child: Text(college,
-                                style: const TextStyle(fontSize: 14)),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedCollege = value;
-                            selectedDepartment = null;
-                            selectedSemester = null;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        value: selectedDepartment,
-                        isExpanded: true,
-                        disabledHint: const Text('اختر الكلية أولاً'),
-                        decoration: InputDecoration(
-                          labelText: 'اختر القسم',
-                          prefixIcon: const Icon(Icons.category,
-                              color: Color(0xFF0288D1)),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        items: availableDepartments.map((dept) {
-                          return DropdownMenuItem(
-                            value: dept,
-                            child: Text(dept,
-                                style: const TextStyle(fontSize: 14)),
-                          );
-                        }).toList(),
-                        onChanged: selectedCollege == null
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  selectedDepartment = value;
-                                });
-                              },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        value: selectedSemester,
-                        isExpanded: true,
-                        disabledHint: const Text('اختر الكلية أولاً'),
-                        decoration: InputDecoration(
-                          labelText: 'اختر السمستر',
-                          prefixIcon: const Icon(Icons.format_list_numbered,
-                              color: Color(0xFF0288D1)),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                        ),
-                        items: List.generate(maxSemesters, (i) => i + 1)
-                            .map((sem) => DropdownMenuItem(
-                                  value: sem,
-                                  child: Text('السمستر $sem'),
-                                ))
-                            .toList(),
-                        onChanged: selectedCollege == null
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  selectedSemester = value;
-                                });
-                              },
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0288D1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          onPressed: (selectedCollege != null &&
-                                  selectedDepartment != null &&
-                                  selectedSemester != null)
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CoursesListScreen(
-                                        college: selectedCollege!,
-                                        department: selectedDepartment!,
-                                        semester: selectedSemester!,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: const Text(
-                            'عرض المقررات',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      appBar: AppBar(
+        title: const Text('المساعد الدراسي الذكي'),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF0288D1),
+        foregroundColor: Colors.white,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: colleges.length,
+        itemBuilder: (context, index) {
+          final college = colleges[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 4,
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: CircleAvatar(
+                radius: 28,
+                backgroundColor: const Color(0xFFE1F5FE),
+                child: Icon(college['icon'], color: const Color(0xFF0288D1), size: 30),
               ),
+              title: Text(
+                college['name'],
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              subtitle: Text('عدد التخصصات: ${(college['departments'] as List).length}'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DepartmentsScreen(
+                      collegeName: college['name'],
+                      departments: List<String>.from(college['departments']),
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
+
+class DepartmentsScreen extends StatelessWidget {
+  final String collegeName;
+  final List<String> departments;
+
+  const DepartmentsScreen({
+    super.key,
+    required this.collegeName,
+    required this.departments,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(collegeName),
+        backgroundColor: const Color(0xFF0288D1),
+        foregroundColor: Colors.white,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: departments.length,
+        itemBuilder: (context, index) {
+          final dept = departments[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: ListTile(
+              leading: const Icon(Icons.school, color: Color(0xFF0288D1)),
+              title: Text(dept, style: const TextStyle(fontWeight: FontWeight.bold)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SemestersScreen(
+                      college: collegeName,
+                      department: dept,
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+class SemestersScreen extends StatelessWidget {
+  final String college;
+  final String department;
+
+  const SemestersScreen({
+    super.key,
+    required this.college,
+    required this.department,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('الفصول الدراسية - $department'),
+        backgroundColor: const Color(0xFF0288D1),
+        foregroundColor: Colors.white,
+      ),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.2,
+        ),
+        itemCount: 10,
+        itemBuilder: (context, index) {
+          final semNum = index + 1;
+          return InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CoursesListScreen(
+                    college: college,
+                    department: department,
+                    semester: semNum,
+                  ),
+                ),
+              );
+            },
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              color: Colors.white,
+              elevation: 3,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.menu_book, size: 40, color: Color(0xFF0288D1)),
+                  const SizedBox(height: 8),
+                  Text(
+                    'السمستر $semNum',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class CoursesListScreen extends StatefulWidget {
   final String college;
   final String department;
@@ -387,7 +343,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                   Icon(Icons.library_books, size: 70, color: Colors.grey.shade400),
                   const SizedBox(height: 12),
                   const Text(
-                    'لا توجد مقررات مضافة بعد.\nاضغط زر "إضافة مقرر" لإنشاء مقال دراسي.',
+                    'لا توجد مقررات مضافة بعد.\nاضغط زر "إضافة مقرر" لإنشاء مقرر دراسي.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey, fontSize: 15),
                   ),
@@ -762,133 +718,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
   }
 }
 
-            Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      final isUser = msg['isUser'] as bool;
-                      return Align(
-                        alignment: isUser
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isUser
-                                ? const Color(0xFF0288D1)
-                                : Colors.grey.shade200,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            msg['text'],
-                            style: TextStyle(
-                                color: isUser ? Colors.white : Colors.black),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: const InputDecoration(
-                              hintText: 'اكتب سؤالك هنا...'),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.send, color: Color(0xFF0288D1)),
-                        onPressed: _sendMessage,
-                      )
-                    ],
-                  ),
-                )
-              ],
-            ),
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'قياس المذاكرة واختبار المستوى',
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF01579B)),
-                      ),
-                      const Divider(height: 25),
-                      const Text('حدد عدد الأسئلة:'),
-                      DropdownButtonFormField<int>(
-                        value: selectedExamQuestionsCount,
-                        items: [5, 10, 15]
-                            .map((c) =>
-                                DropdownMenuItem(value: c, child: Text('$c أسئلة')))
-                            .toList(),
-                        onChanged: (v) =>
-                            setState(() => selectedExamQuestionsCount = v!),
-                      ),
-                      const SizedBox(height: 15),
-                      const Text('اختر نوع الأسئلة:'),
-                      DropdownButtonFormField<String>(
-                        value: selectedQuestionType,
-                        items: ['اختيار من متعدد', 'صح / خطأ']
-                            .map((t) =>
-                                DropdownMenuItem(value: t, child: Text(t)))
-                            .toList(),
-                        onChanged: (v) => setState(() => selectedQuestionType = v!),
-                      ),
-                      const SizedBox(height: 25),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0288D1)),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (ctx) => QuizScreen(
-                                  questionCount: selectedExamQuestionsCount,
-                                  courseName: widget.courseName,
-                                ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.play_arrow, color: Colors.white),
-                          label: const Text('بدء قياس المذاكرة الآن',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 class PDFReaderScreen extends StatefulWidget {
   final String filePath;
   final String fileName;
@@ -949,8 +778,6 @@ class QuizScreen extends StatefulWidget {
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  int score = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1024,7 +851,9 @@ class ResultScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 color: Colors.grey.shade100,
-                child: SingleChildScrollView(child: Text(reviewText)),
+                child: SingleChildScrollView(
+                  child: Text(reviewText),
+                ),
               ),
             ),
             const SizedBox(height: 10),
