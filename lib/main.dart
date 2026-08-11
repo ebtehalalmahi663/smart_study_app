@@ -1,6 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:share_plus/share_plus.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const SmartStudyApp());
 }
 
@@ -21,23 +28,64 @@ class SmartStudyApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF4F6F9),
       ),
-      home: const SemesterSelectionScreen(),
+      home: const MainSelectionScreen(),
     );
   }
 }
 
-class SemesterSelectionScreen extends StatefulWidget {
-  const SemesterSelectionScreen({super.key});
+class MainSelectionScreen extends StatefulWidget {
+  const MainSelectionScreen({super.key});
 
   @override
-  State<SemesterSelectionScreen> createState() => _SemesterSelectionScreenState();
+  State<MainSelectionScreen> createState() => _MainSelectionScreenState();
 }
 
-class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
+class _MainSelectionScreenState extends State<MainSelectionScreen> {
+  String? selectedCollege;
+  String? selectedDepartment;
   int? selectedSemester;
+
+  final Map<String, List<String>> collegesData = {
+    'كلية علوم الحاسوب وتقانة المعلومات': [
+      'علوم الحاسوب',
+      'تقانة المعلومات',
+      'نظم المعلومات',
+      'هندسة البرمجيات'
+    ],
+    'كلية الاقتصاد': ['محاسبة', 'اقتصاد', 'إدارة'],
+    'كلية الطب': [
+      'الطب البشري',
+      'الطب البيطري',
+      'المختبرات الطبية',
+      'الصيدلة',
+      'التمريض'
+    ],
+    'كلية التربية': [
+      'تربية علم نفس',
+      'تربية كيمياء وأحياء',
+      'تربية إنجليزي',
+      'تربية لغة عربية',
+      'تربية جغرافيا وتاريخ',
+      'تربية خاصة',
+      'تربية فيزياء ورياضيات'
+    ],
+    'كلية القانون': ['القانون العام', 'القانون الخاص'],
+  };
+
+  int _getMaxSemesters(String college) {
+    if (college == 'كلية علوم الحاسوب وتقانة المعلومات' || college == 'كلية الطب') {
+      return 10;
+    }
+    return 8;
+  }
 
   @override
   Widget build(BuildContext context) {
+    List<String> availableDepartments =
+        selectedCollege != null ? collegesData[selectedCollege]! : [];
+    int maxSemesters =
+        selectedCollege != null ? _getMaxSemesters(selectedCollege!) : 8;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -50,23 +98,24 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(20.0),
               child: Card(
                 elevation: 10,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(28.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const CircleAvatar(
-                        radius: 40,
+                        radius: 38,
                         backgroundColor: Color(0xFFE1F5FE),
-                        child: Icon(Icons.school_rounded, size: 50, color: Color(0xFF0288D1)),
+                        child: Icon(Icons.school_rounded,
+                            size: 45, color: Color(0xFF0288D1)),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       const Text(
                         'المساعد الدراسي الذكي',
                         style: TextStyle(
@@ -75,37 +124,94 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
                           color: Color(0xFF01579B),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       const Text(
-                        'اختر الفصل الدراسي للبدء',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        'حدد بياناتك الأكاديمية للمتابعة',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
+                      DropdownButtonFormField<String>(
+                        value: selectedCollege,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'اختر الكلية',
+                          prefixIcon: const Icon(Icons.account_balance,
+                              color: Color(0xFF0288D1)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        items: collegesData.keys.map((college) {
+                          return DropdownMenuItem(
+                            value: college,
+                            child: Text(college,
+                                style: const TextStyle(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedCollege = value;
+                            selectedDepartment = null;
+                            selectedSemester = null;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedDepartment,
+                        isExpanded: true,
+                        disabledHint: const Text('اختر الكلية أولاً'),
+                        decoration: InputDecoration(
+                          labelText: 'اختر القسم',
+                          prefixIcon: const Icon(Icons.category,
+                              color: Color(0xFF0288D1)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        items: availableDepartments.map((dept) {
+                          return DropdownMenuItem(
+                            value: dept,
+                            child: Text(dept,
+                                style: const TextStyle(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: selectedCollege == null
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  selectedDepartment = value;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 16),
                       DropdownButtonFormField<int>(
                         value: selectedSemester,
+                        isExpanded: true,
+                        disabledHint: const Text('اختر الكلية أولاً'),
                         decoration: InputDecoration(
-                          labelText: 'اختر السمستر (1 - 10)',
-                          prefixIcon: const Icon(Icons.format_list_numbered, color: Color(0xFF0288D1)),
+                          labelText: 'اختر السمستر',
+                          prefixIcon: const Icon(Icons.format_list_numbered,
+                              color: Color(0xFF0288D1)),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                              borderRadius: BorderRadius.circular(16)),
                         ),
-                        items: List.generate(10, (index) => index + 1)
+                        items: List.generate(maxSemesters, (i) => i + 1)
                             .map((sem) => DropdownMenuItem(
                                   value: sem,
                                   child: Text('السمستر $sem'),
                                 ))
                             .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedSemester = value;
-                          });
-                        },
+                        onChanged: selectedCollege == null
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  selectedSemester = value;
+                                });
+                              },
                       ),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
-                        height: 52,
+                        height: 50,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0288D1),
@@ -113,18 +219,22 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          onPressed: selectedSemester == null
-                              ? null
-                              : () {
+                          onPressed: (selectedCollege != null &&
+                                  selectedDepartment != null &&
+                                  selectedSemester != null)
+                              ? () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CoursesListScreen(
-                                        semesterNumber: selectedSemester!,
+                                        college: selectedCollege!,
+                                        department: selectedDepartment!,
+                                        semester: selectedSemester!,
                                       ),
                                     ),
                                   );
-                                },
+                                }
+                              : null,
                           child: const Text(
                             'عرض المقررات',
                             style: TextStyle(
@@ -146,84 +256,185 @@ class _SemesterSelectionScreenState extends State<SemesterSelectionScreen> {
     );
   }
 }
-class CoursesListScreen extends StatelessWidget {
-  final int semesterNumber;
+class CoursesListScreen extends StatefulWidget {
+  final String college;
+  final String department;
+  final int semester;
 
-  const CoursesListScreen({super.key, required this.semesterNumber});
+  const CoursesListScreen({
+    super.key,
+    required this.college,
+    required this.department,
+    required this.semester,
+  });
 
-  List<Map<String, dynamic>> _getCoursesForSemester(int sem) {
-    if (sem == 6) {
-      return [
-        {'name': 'الذكاء الاصطناعي (AI)', 'icon': Icons.psychology},
-        {'name': 'رسم الحاسوب (Computer Graphics)', 'icon': Icons.palette},
-        {'name': 'قواعد البيانات (Database Systems)', 'icon': Icons.storage},
-        {'name': 'هندسة البرمجيات (Software Engineering)', 'icon': Icons.developer_mode},
-        {'name': 'تقنيات الإنترنت (Internet Techniques)', 'icon': Icons.web},
-        {'name': 'مبادئ التسويق (Marketing)', 'icon': Icons.campaign},
-        {'name': 'مبادئ المحاسبة (Accounting)', 'icon': Icons.calculate},
-        {'name': 'النمذجة والمحاكاة (Modeling & Simulation)', 'icon': Icons.analytics},
-      ];
+  @override
+  State<CoursesListScreen> createState() => _CoursesListScreenState();
+}
+
+class _CoursesListScreenState extends State<CoursesListScreen> {
+  List<Map<String, String>> customCourses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCourses();
+  }
+
+  String get _storageKey =>
+      'courses_${widget.college}_${widget.department}_${widget.semester}';
+
+  Future<void> _loadSavedCourses() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString(_storageKey);
+    if (data != null) {
+      final List decoded = jsonDecode(data);
+      setState(() {
+        customCourses = decoded.map((item) => Map<String, String>.from(item)).toList();
+      });
     }
-    return [
-      {'name': 'مقدمة في البرمجة', 'icon': Icons.code},
-      {'name': 'تراكيب البيانات', 'icon': Icons.account_tree},
-      {'name': 'الرياضيات المتقطعة', 'icon': Icons.functions},
-      {'name': 'شبكات الحاسوب', 'icon': Icons.network_check},
-    ];
+  }
+
+  Future<void> _saveCourses() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(customCourses));
+  }
+
+  void _showAddCourseDialog() {
+    final nameController = TextEditingController();
+    final hoursController = TextEditingController();
+    final labLanguagesController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('إضافة مقرر جديد', textAlign: TextAlign.center),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'اسم المقرر'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: hoursController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'عدد الساعات'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: labLanguagesController,
+                decoration: const InputDecoration(
+                  labelText: 'لغات المعمل (اكتب لا يوجد إن لم تتوفر)',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty) {
+                setState(() {
+                  customCourses.add({
+                    'name': nameController.text.trim(),
+                    'hours': hoursController.text.trim().isEmpty
+                        ? '3'
+                        : hoursController.text.trim(),
+                    'lab': labLanguagesController.text.trim().isEmpty
+                        ? 'لا يوجد'
+                        : labLanguagesController.text.trim(),
+                  });
+                });
+                _saveCourses();
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('إضافة'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final courses = _getCoursesForSemester(semesterNumber);
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('مقررات السمستر $semesterNumber'),
+        title: Text('${widget.department} - سمستر ${widget.semester}'),
         backgroundColor: const Color(0xFF0288D1),
         foregroundColor: Colors.white,
-        centerTitle: true,
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: courses.length,
-        itemBuilder: (context, index) {
-          final course = courses[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            elevation: 2,
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFFE1F5FE),
-                child: Icon(course['icon'] as IconData, color: const Color(0xFF0288D1)),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF0288D1),
+        onPressed: _showAddCourseDialog,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('إضافة مقرر',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: customCourses.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.library_books, size: 70, color: Colors.grey.shade400),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'لا توجد مقررات مضافة بعد.\nاضغط زر "إضافة مقرر" لإنشاء مقال دراسي.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 15),
+                  ),
+                ],
               ),
-              title: Text(
-                course['name'] as String,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              subtitle: const Text('اضغط لبدء الدراسة والمناقشة'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CourseDetailTabbedScreen(
-                      courseName: course['name'] as String,
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: customCourses.length,
+              itemBuilder: (context, index) {
+                final course = customCourses[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  elevation: 3,
+                  child: ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFE1F5FE),
+                      child: Icon(Icons.book, color: Color(0xFF0288D1)),
                     ),
+                    title: Text(
+                      course['name']!,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                        'الساعات: ${course['hours']} | لغات المعمل: ${course['lab']}'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CourseDetailTabbedScreen(
+                            courseName: course['name']!,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 );
               },
             ),
-          );
-        },
-      ),
     );
   }
 }
-
 class CourseDetailTabbedScreen extends StatefulWidget {
   final String courseName;
 
@@ -234,24 +445,74 @@ class CourseDetailTabbedScreen extends StatefulWidget {
 }
 
 class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
-  List<String> uploadedFiles = [];
+  List<Map<String, String>> uploadedFiles = [];
   final TextEditingController _messageController = TextEditingController();
   final List<Map<String, dynamic>> _messages = [
     {
       'isUser': false,
-      'text': 'أهلاً بك! يمكنك إدراج ملفاتك من قسم "المحاضرات" وسأقوم بإجابة استفساراتك بناءً عليها.'
+      'text': 'أهلاً بك! يمكنك إدراج ملفاتك من قسم "المحاضرات" وسأقوم بإجابة استفساراتك.'
     }
   ];
 
   int selectedExamQuestionsCount = 5;
   String selectedQuestionType = 'اختيار من متعدد';
-  List<String> selectedExamLectures = [];
 
-  void _addMockFile() {
-    setState(() {
-      int count = uploadedFiles.length + 1;
-      uploadedFiles.add('المحاضرة_$count.pdf');
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedFilesAndResume();
+  }
+
+  Future<void> _loadSavedFilesAndResume() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? filesJson = prefs.getString('files_${widget.courseName}');
+    if (filesJson != null) {
+      final List decoded = jsonDecode(filesJson);
+      setState(() {
+        uploadedFiles =
+            decoded.map((e) => Map<String, String>.from(e)).toList();
+      });
+    }
+
+    final int? lastPage = prefs.getInt('last_page_${widget.courseName}');
+    final String? lastFile = prefs.getString('last_file_${widget.courseName}');
+
+    if (lastPage != null && lastFile != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'تنبيه: كنت تتصفح ملف "$lastFile" عند السلايد رقم $lastPage'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'متابعة',
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveFiles() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'files_${widget.courseName}', jsonEncode(uploadedFiles));
+  }
+
+  Future<void> _pickFileFromPhone() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        uploadedFiles.add({
+          'name': result.files.single.name,
+          'path': result.files.single.path!,
+        });
+      });
+      _saveFiles();
+    }
   }
 
   void _sendMessage() {
@@ -268,17 +529,19 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
         if (uploadedFiles.isEmpty) {
           _messages.add({
             'isUser': false,
-            'text': 'يرجى إدراج ملفات المحاضرات أولاً من قسم (المحاضرات) ليتمكن المساعد من استخراج الإجابات الدقيقة لك.'
+            'text': 'يرجى إدراج ملفات المحاضرات أولاً ليتمكن المساعد من استخراج الإجابات.'
           });
         } else {
           _messages.add({
             'isUser': false,
-            'text': 'استناداً إلى الملفات المدرجة (${uploadedFiles.first}): إجابة سؤالك تعتمد على المفاهيم الموضحة في الملاحظات الدراسية.'
+            'text':
+                'استناداً إلى الملف المدرج (${uploadedFiles.first['name']}): الإجابة تعتمد على شرح الشريحة الدراسية.'
           });
         }
       });
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -288,16 +551,14 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
           title: Text(widget.courseName),
           backgroundColor: const Color(0xFF0288D1),
           foregroundColor: Colors.white,
-          centerTitle: true,
           bottom: const TabBar(
             indicatorColor: Colors.white,
-            indicatorWeight: 3,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
             tabs: [
               Tab(icon: Icon(Icons.picture_as_pdf), text: 'المحاضرات'),
               Tab(icon: Icon(Icons.chat), text: 'المحادثة'),
-              Tab(icon: Icon(Icons.assignment), text: 'تكوين الامتحان'),
+              Tab(icon: Icon(Icons.analytics), text: 'قياس المذاكرة'),
             ],
           ),
         ),
@@ -313,66 +574,58 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                       backgroundColor: const Color(0xFF0288D1),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                          borderRadius: BorderRadius.circular(14)),
                     ),
-                    onPressed: _addMockFile,
+                    onPressed: _pickFileFromPhone,
                     icon: const Icon(Icons.add_to_photos, color: Colors.white),
                     label: const Text(
-                      'إدراج ملف محاضرة جديد',
-                      style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                      'إدراج ملف محاضرة من الهاتف',
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'الملفات المدرجة:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF01579B)),
-                      ),
-                      Text(
-                        'العدد: ${uploadedFiles.length}',
-                        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                  Text('الملفات المدرجة (${uploadedFiles.length}):',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
                   Expanded(
                     child: uploadedFiles.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.folder_open, size: 70, color: Colors.grey.shade400),
-                                const SizedBox(height: 12),
-                                const Text(
-                                  'لم يتم إدراج أي ملفات بعد\nاضغط على الزر أعلاه لإضافة الملفات',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.grey, fontSize: 15),
-                                ),
-                              ],
-                            ),
-                          )
+                        ? const Center(child: Text('لا توجد ملفات مدرجة'))
                         : ListView.builder(
                             itemCount: uploadedFiles.length,
                             itemBuilder: (context, index) {
-                              final fileName = uploadedFiles[index];
+                              final file = uploadedFiles[index];
                               return Card(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 child: ListTile(
-                                  leading: const Icon(Icons.picture_as_pdf, color: Colors.red, size: 32),
-                                  title: Text(fileName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: const Text('2.4 MB'),
+                                  leading: const Icon(Icons.pdf_customize,
+                                      color: Colors.red, size: 30),
+                                  title: Text(file['name']!),
+                                  subtitle: const Text('اضغط للقراءة داخل التطبيق'),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.redAccent),
                                     onPressed: () {
                                       setState(() {
                                         uploadedFiles.removeAt(index);
                                       });
+                                      _saveFiles();
                                     },
                                   ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (ctx) => PDFReaderScreen(
+                                          filePath: file['path']!,
+                                          fileName: file['name']!,
+                                          courseName: widget.courseName,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               );
                             },
@@ -383,22 +636,6 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
             ),
             Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: const Color(0xFFE1F5FE),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline, color: Color(0xFF0288D1), size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'الإجابات تعتمد على ${uploadedFiles.length} ملف/ملفات مدرجة.',
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF01579B)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
@@ -407,30 +644,22 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                       final msg = _messages[index];
                       final isUser = msg['isUser'] as bool;
                       return Align(
-                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isUser ? const Color(0xFF0288D1) : Colors.white,
-                            borderRadius: BorderRadius.circular(16).copyWith(
-                              bottomRight: isUser ? Radius.zero : null,
-                              bottomLeft: !isUser ? Radius.zero : null,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ],
+                            color: isUser
+                                ? const Color(0xFF0288D1)
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            msg['text'] as String,
+                            msg['text'],
                             style: TextStyle(
-                              color: isUser ? Colors.white : Colors.black87,
-                              fontSize: 15,
-                            ),
+                                color: isUser ? Colors.white : Colors.black),
                           ),
                         ),
                       );
@@ -438,154 +667,87 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.all(12),
-                  color: Colors.white,
+                  padding: const EdgeInsets.all(8),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _messageController,
-                          decoration: InputDecoration(
-                            hintText: 'اكتب سؤالك حول الملفات المدرجة...',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(25),
-                              borderSide: BorderSide.none,
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFFF4F6F9),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          ),
+                          decoration: const InputDecoration(
+                              hintText: 'اكتب سؤالك هنا...'),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: const Color(0xFF0288D1),
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white, size: 20),
-                          onPressed: _sendMessage,
-                        ),
-                      ),
+                      IconButton(
+                        icon: const Icon(Icons.send, color: Color(0xFF0288D1)),
+                        onPressed: _sendMessage,
+                      )
                     ],
                   ),
-                ),
+                )
               ],
             ),
             SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.quiz, color: Color(0xFF0288D1), size: 28),
-                          SizedBox(width: 10),
-                          Text(
-                            'إعداد الاختبار التجريبي',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF01579B)),
-                          ),
-                        ],
+                      const Text(
+                        'قياس المذاكرة واختبار المستوى',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF01579B)),
                       ),
-                      const Divider(height: 30),
-                      const Text('اختر المحاضرات للرصد:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(height: 8),
-                      uploadedFiles.isEmpty
-                          ? Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.shade50,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                'تنبيه: يمكنك اختيار المحاضرات بعد إدراج ملفات في قسم المحاضرات.',
-                                style: TextStyle(color: Colors.amber, fontSize: 13),
-                              ),
-                            )
-                          : Column(
-                              children: uploadedFiles.map((fileName) {
-                                return CheckboxListTile(
-                                  title: Text(fileName),
-                                  value: selectedExamLectures.contains(fileName),
-                                  activeColor: const Color(0xFF0288D1),
-                                  onChanged: (bool? val) {
-                                    setState(() {
-                                      if (val == true) {
-                                        selectedExamLectures.add(fileName);
-                                      } else {
-                                        selectedExamLectures.remove(fileName);
-                                      }
-                                    });
-                                  },
-                                );
-                              }).toList(),
-                            ),
-                      const SizedBox(height: 20),
-                      const Text('حدد عدد الأسئلة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(height: 8),
+                      const Divider(height: 25),
+                      const Text('حدد عدد الأسئلة:'),
                       DropdownButtonFormField<int>(
                         value: selectedExamQuestionsCount,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        ),
-                        items: [5, 10, 15, 20]
-                            .map((count) => DropdownMenuItem(value: count, child: Text('$count أسئلة')))
+                        items: [5, 10, 15]
+                            .map((c) =>
+                                DropdownMenuItem(value: c, child: Text('$c أسئلة')))
                             .toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => selectedExamQuestionsCount = val);
-                        },
+                        onChanged: (v) =>
+                            setState(() => selectedExamQuestionsCount = v!),
                       ),
-                      const SizedBox(height: 20),
-                      const Text('اختر نوع الأسئلة:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 15),
+                      const Text('اختر نوع الأسئلة:'),
                       DropdownButtonFormField<String>(
                         value: selectedQuestionType,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        ),
-                        items: ['اختيار من متعدد', 'صح / خطأ', 'أسئلة مقالية قصيرة', 'خليط متعدّد']
-                            .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                        items: ['اختيار من متعدد', 'صح / خطأ']
+                            .map((t) =>
+                                DropdownMenuItem(value: t, child: Text(t)))
                             .toList(),
-                        onChanged: (val) {
-                          if (val != null) setState(() => selectedQuestionType = val);
-                        },
+                        onChanged: (v) => setState(() => selectedQuestionType = v!),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 25),
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0288D1),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
+                              backgroundColor: const Color(0xFF0288D1)),
                           onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('تم تكوين الامتحان بنجاح!'),
-                                content: Text(
-                                  'تم إنشاء اختبار مكون من $selectedExamQuestionsCount أسئلة ($selectedQuestionType) استناداً إلى المحاضرات المختارة.',
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => QuizScreen(
+                                  questionCount: selectedExamQuestionsCount,
+                                  courseName: widget.courseName,
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('بدء الاختبار الان'),
-                                  )
-                                ],
                               ),
                             );
                           },
-                          icon: const Icon(Icons.auto_awesome, color: Colors.white),
-                          label: const Text(
-                            'تكوين الامتحان الآن',
-                            style: TextStyle(fontSize: 17, color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
+                          icon: const Icon(Icons.play_arrow, color: Colors.white),
+                          label: const Text('بدء قياس المذاكرة الآن',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -599,5 +761,174 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
     );
   }
 }
+class PDFReaderScreen extends StatefulWidget {
+  final String filePath;
+  final String fileName;
+  final String courseName;
 
- 
+  const PDFReaderScreen({
+    super.key,
+    required this.filePath,
+    required this.fileName,
+    required this.courseName,
+  });
+
+  @override
+  State<PDFReaderScreen> createState() => _PDFReaderScreenState();
+}
+
+class _PDFReaderScreenState extends State<PDFReaderScreen> {
+  int currentPage = 0;
+
+  Future<void> _saveCurrentPage(int page) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_page_${widget.courseName}', page + 1);
+    await prefs.setString('last_file_${widget.courseName}', widget.fileName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.fileName} (سلايد ${currentPage + 1})'),
+        backgroundColor: const Color(0xFF0288D1),
+        foregroundColor: Colors.white,
+      ),
+      body: PDFView(
+        filePath: widget.filePath,
+        onPageChanged: (page, total) {
+          if (page != null) {
+            setState(() {
+              currentPage = page;
+            });
+            _saveCurrentPage(page);
+          }
+        },
+      ),
+    );
+  }
+}
+
+class QuizScreen extends StatefulWidget {
+  final int questionCount;
+  final String courseName;
+
+  const QuizScreen(
+      {super.key, required this.questionCount, required this.courseName});
+
+  @override
+  State<QuizScreen> createState() => _QuizScreenState();
+}
+
+class _QuizScreenState extends State<QuizScreen> {
+  int score = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('اختبار: ${widget.courseName}'),
+        backgroundColor: const Color(0xFF0288D1),
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Text('سؤال تجريبي لتحديد المستوى (${widget.questionCount} أسئلة)'),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: () {
+                int finalScore = 80;
+                String reviewText =
+                    'نتائج قياس المذاكرة لـ ${widget.courseName}:\n'
+                    'نسبة النجاح: $finalScore%\n'
+                    'س1: مفهوم النظام - الإجابة: صحيح\n'
+                    'س2: معالجة البيانات - الإجابة: صحيح';
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => ResultScreen(
+                      score: finalScore,
+                      reviewText: reviewText,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('إنهاء الاختبار واحتساب النتيجة'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ResultScreen extends StatelessWidget {
+  final int score;
+  final String reviewText;
+
+  const ResultScreen(
+      {super.key, required this.score, required this.reviewText});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('نتيجة قياس المذاكرة'),
+        backgroundColor: const Color(0xFF0288D1),
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            Text(
+              'نسبة النجاح: $score%',
+              style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.grey.shade100,
+                child: SingleChildScrollView(child: Text(reviewText)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: reviewText));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('تم نسخ الإجابات والنتائج!')),
+                      );
+                    },
+                    icon: const Icon(Icons.copy),
+                    label: const Text('نسخ النسخة'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Share.share(reviewText);
+                    },
+                    icon: const Icon(Icons.share),
+                    label: const Text('مشاركة'),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
