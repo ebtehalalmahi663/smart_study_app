@@ -600,7 +600,7 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                               final file = uploadedFiles[index];
                               return Card(
                                 child: ListTile(
-                                  leading: const Icon(Icons.pdf_customize,
+                                  leading: const Icon(Icons.picture_as_pdf,
                                       color: Colors.red, size: 30),
                                   title: Text(file['name']!),
                                   subtitle: const Text('اضغط للقراءة داخل التطبيق'),
@@ -634,6 +634,134 @@ class _CourseDetailTabbedScreenState extends State<CourseDetailTabbedScreen> {
                 ],
               ),
             ),
+            Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = _messages[index];
+                      final isUser = msg['isUser'] as bool;
+                      return Align(
+                        alignment: isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isUser
+                                ? const Color(0xFF0288D1)
+                                : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            msg['text'],
+                            style: TextStyle(
+                                color: isUser ? Colors.white : Colors.black),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: const InputDecoration(
+                              hintText: 'اكتب سؤالك هنا...'),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.send, color: Color(0xFF0288D1)),
+                        onPressed: _sendMessage,
+                      )
+                    ],
+                  ),
+                )
+              ],
+            ),
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'قياس المذاكرة واختبار المستوى',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF01579B)),
+                      ),
+                      const Divider(height: 25),
+                      const Text('حدد عدد الأسئلة:'),
+                      DropdownButtonFormField<int>(
+                        value: selectedExamQuestionsCount,
+                        items: [5, 10, 15]
+                            .map((c) =>
+                                DropdownMenuItem(value: c, child: Text('$c أسئلة')))
+                            .toList(),
+                        onChanged: (v) =>
+                            setState(() => selectedExamQuestionsCount = v!),
+                      ),
+                      const SizedBox(height: 15),
+                      const Text('اختر نوع الأسئلة:'),
+                      DropdownButtonFormField<String>(
+                        value: selectedQuestionType,
+                        items: ['اختيار من متعدد', 'صح / خطأ']
+                            .map((t) =>
+                                DropdownMenuItem(value: t, child: Text(t)))
+                            .toList(),
+                        onChanged: (v) => setState(() => selectedQuestionType = v!),
+                      ),
+                      const SizedBox(height: 25),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0288D1)),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => QuizScreen(
+                                  questionCount: selectedExamQuestionsCount,
+                                  courseName: widget.courseName,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.play_arrow, color: Colors.white),
+                          label: const Text('بدء قياس المذاكرة الآن',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
             Column(
               children: [
                 Expanded(
