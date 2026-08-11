@@ -1,51 +1,37 @@
-name: Build Android APK
+name: Build Flutter APK
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java Development Kit (JDK)
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Flutter SDK
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-
-      - name: Create Flutter Project Skeleton
-        run: |
-          if [ ! -d "android" ]; then
-            flutter create . --platforms=android
-          fi
+          flutter-version: '3.x'
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Update compileSdk to 36
+      # هذه هي الخطوة السحرية التي ستحل مشكلة compileSdk
+      - name: Fix compileSdk Version
         run: |
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 36/' android/app/build.gradle || true
-          sed -i 's/compileSdk .*/compileSdk 36/' android/app/build.gradle || true
-          sed -i 's/targetSdkVersion .*/targetSdkVersion 36/' android/app/build.gradle || true
-          sed -i 's/targetSdk .*/targetSdk 36/' android/app/build.gradle || true
+          sed -i 's/compileSdkVersion.*/compileSdkVersion 36/' android/app/build.gradle
+          sed -i 's/compileSdk .*/compileSdk 36/' android/app/build.gradle
+          sed -i 's/targetSdkVersion.*/targetSdkVersion 36/' android/app/build.gradle
+          sed -i 's/targetSdk .*/targetSdk 36/' android/app/build.gradle
 
       - name: Build APK
         run: flutter build apk --debug
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
