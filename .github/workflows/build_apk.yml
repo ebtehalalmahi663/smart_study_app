@@ -22,16 +22,20 @@ jobs:
         with:
           flutter-version: '3.x'
 
-      - name: Install dependencies
-        run: flutter pub get
+      # 1. إعادة إنشاء مجلد android المتوافق تماماً مع Flutter الحديث
+      - name: Re-create Android Platform Files
+        run: flutter create --platforms=android .
 
-      # هذه هي الخطوة السحرية التي ستحل مشكلة compileSdk
-      - name: Fix compileSdk Version
+      # 2. تعديل compileSdk إلى 36 تلقائياً
+      - name: Set compileSdk to 36
         run: |
           sed -i 's/compileSdkVersion.*/compileSdkVersion 36/' android/app/build.gradle
           sed -i 's/compileSdk .*/compileSdk 36/' android/app/build.gradle
           sed -i 's/targetSdkVersion.*/targetSdkVersion 36/' android/app/build.gradle
           sed -i 's/targetSdk .*/targetSdk 36/' android/app/build.gradle
+
+      - name: Install dependencies
+        run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --debug
